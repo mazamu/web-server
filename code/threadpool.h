@@ -28,6 +28,7 @@ public:
     ~ThreadPool();
     bool append(std::function<void(std::shared_ptr<void>)> fun,std::shared_ptr<void> arg);
     void shutdown(bool graceful);
+    void test(std::shared_ptr<void>);
 private:
     void run();
     static void* work(void *args);
@@ -38,7 +39,6 @@ private:
 
     int thread_size;
     int max_queue_size;
-    int _started;
     int _shutdown;
     std::vector<pthread_t>_threads;
     std::list<ThreadTask>request_queue;

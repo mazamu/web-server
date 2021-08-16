@@ -3,7 +3,7 @@
 
 #include"threadpool.h"
 
-ThreadPool::ThreadPool(int threads,int max_queue_size):request_queue(max_queue_size),thread_size(threads),_started(0),_shutdown(0) {
+ThreadPool::ThreadPool(int threads,int max_queue_size):request_queue(max_queue_size),thread_size(threads),_shutdown(0) {
     
     if(threads <= 0 || threads > MAX_QUEUE_SIZE) {
         thread_size = 4;
@@ -13,14 +13,13 @@ ThreadPool::ThreadPool(int threads,int max_queue_size):request_queue(max_queue_s
         max_queue_size = MAX_QUEUE_SIZE;
     }
     //分配空间
-    threads.resize(thread_size);
-
+    _threads.resize(thread_size);
+    append(std::bind(&ThreadPool::test,this,std::placeholders::_1));
     for(int i = 0; i < thread_size; i++) {
-        if(pthread_create(&threads[i],nullptr,worker,this) != 0) {
+        if(pthread_create(&_threads[i],nullptr,work,this) != 0) {
             std::cout<<"ThreadPool init error"<<std::endl;
             throw::std::exception;
         }
-        _started++;   
     }
 }
 
