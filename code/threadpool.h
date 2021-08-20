@@ -1,6 +1,6 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
-
+#include<stdio.h>
 #include<vector>
 #include<list>
 #include<functional>
@@ -17,18 +17,18 @@ typedef enum {
 } ShutdownMode;
 
 struct ThreadTask {
-    std::function<void(std::shared_ptr<void>)> process;     // 实际传入的是Server::do_request;
-    std::shared_ptr<void> arg;   // 实际应该是HttpData对象
+    std::function<void(void*)> process;     // 实际传入的是Server::do_request;
+    void* arg;   // 实际应该是HttpData对象
 };
 
 
 class ThreadPool{
 public:
-    ThreadPool(int threads,int max_queue_size);
+    ThreadPool(int threads = 4,int max_queue_size = 1024);
     ~ThreadPool();
-    bool append(std::function<void(std::shared_ptr<void>)> fun,std::shared_ptr<void> arg);
+    bool append(std::function<void(void*)> fun,void* arg);
     void shutdown(bool graceful);
-    void test(std::shared_ptr<void>);
+    //void test(std::shared_ptr<void>);
 private:
     void run();
     static void* work(void *args);

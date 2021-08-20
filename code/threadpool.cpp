@@ -1,5 +1,6 @@
 #include<assert.h>
 #include<sys/prctl.h>
+#include<iostream>
 
 #include"threadpool.h"
 
@@ -14,11 +15,10 @@ ThreadPool::ThreadPool(int threads,int max_queue_size):request_queue(max_queue_s
     }
     //分配空间
     _threads.resize(thread_size);
-    append(std::bind(&ThreadPool::test,this,std::placeholders::_1));
     for(int i = 0; i < thread_size; i++) {
         if(pthread_create(&_threads[i],nullptr,work,this) != 0) {
             std::cout<<"ThreadPool init error"<<std::endl;
-            throw::std::exception;
+            throw std::exception();
         }
     }
 }
@@ -27,13 +27,14 @@ ThreadPool::~ThreadPool() {
 
 }
 
-bool::ThreadPool::append(std::function<void(std::shared_ptr<void>)> fun,std::shared_ptr<void> arg) {
+bool::ThreadPool::append(std::function<void(void*)> fun,void* arg) {
     if(_shutdown) {
         std::cout<<"Thread has shutdown"<<std::endl;
         return false;
     }
 
-    std::unique_ptr<std::mutex>lk(_mtx);
+    //_mtx.lock();
+    std::unique_lock<std::mutex>lk(_mtx);
     if(request_queue.size() > max_queue_size) {
         std::cout<<max_queue_size;
         std::cout<<"Thread has too many requests"<<std::endl;
@@ -44,6 +45,7 @@ bool::ThreadPool::append(std::function<void(std::shared_ptr<void>)> fun,std::sha
     threadTask.arg = arg;
     request_queue.push_back(threadTask);
     _cond.notify_one();
+    //_mtx.unlock();
     return true;
 }
 
@@ -87,7 +89,7 @@ void ThreadPool::run() {
 
             if((_shutdown == immediate_mode) || 
             (_shutdown == graceful_mode && 
-            request_queue.empty()) {
+            request_queue.empty())) {
                 break;
             }
 
