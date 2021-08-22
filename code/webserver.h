@@ -7,6 +7,10 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include <strings.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -19,13 +23,32 @@ class WebServer{
 public:
     WebServer(int port = 10000);
     ~WebServer();
+    
+    //开始
     void start();
+
+    //socket相关
     void initSocket();
     void handleConnection();
     void handleEvent(void* arg);
-    void send_data(FILE *fp,char *ct,char *file_name);
-    char *content_type(char *file);
-    void send_error(FILE *fp);
+    std::thread hevents(void* arg);
+    void disconnect(int cliSock);
+
+    //HTTP相关
+    void http_request(const char* request,int cliSock);
+    void send_respond_head(int cliSock, int no, const char* desp, const char* type, long len);
+    void send_file(int cliSock, const char* fileName);
+    void send_error(int cliSock, int status, char *title, char *text);
+    //译码
+    int hexit(char c);
+    void encode_str(char* to, int tosize, const char* from);
+    void decode_str(char *to, char *from);
+
+    //文件相关
+    int get_line(int cliSock,char* line,int size);
+    const char *get_file_type(const char *name);
+
+    
 private:
     Epoller*_epoller;
     //ThreadPool*_threadpool;//线程池负责各个连接的工作
