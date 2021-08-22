@@ -58,7 +58,7 @@ void WebServer::start() {
                     //pthread_t tid;
                     std::cout<<"EPOLLIN event"<<std::endl;
                     //handleEvent((void*)&fd);
-                    hevents((void*)&fd).detach();
+                    wrap_events((void*)&fd).detach();
                     //std::thread(&WebServer::handleConnection,(void*)&fd);
                     //pthread_create(&tid,NULL,&(WebServer::handleEvent),(void*)&fd);
                     //std::thread(&WebServer::handleEvent,this,&fd);
@@ -106,7 +106,7 @@ void WebServer::handleConnection() {
     _epoller->addFd(cliSock,EPOLLIN | EPOLLET | EPOLLONESHOT);
 }
 
-std::thread WebServer::hevents(void* arg) {
+std::thread WebServer::wrap_events(void* arg) {
     return std::thread(&WebServer::handleEvent,this,arg);
 }
 

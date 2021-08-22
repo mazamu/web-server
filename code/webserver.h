@@ -31,7 +31,7 @@ public:
     void initSocket();
     void handleConnection();
     void handleEvent(void* arg);
-    std::thread hevents(void* arg);
+    std::thread wrap_events(void* arg);
     void disconnect(int cliSock);
 
     //HTTP相关
