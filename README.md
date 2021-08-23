@@ -10,6 +10,25 @@
 
 · 目前支持"GET"方法。
 
+### 目录结构
+
+
+```
+.
+├── epoller.cpp
+├── epoller.h
+├── index.html
+├── main.cpp
+├── Makefile
+├── server
+├── threadpool
+│   ├── threadpool.cpp
+│   └── threadpool.h
+├── webserver.cpp
+└── webserver.h
+```
+
+
 ### 使用教程
 
 在目录code下，
