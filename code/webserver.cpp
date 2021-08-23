@@ -1,12 +1,20 @@
 #include"webserver.h"
+
 const int SMALL_BUF = 100;
 const int BUF_SIZE = 1024;
-WebServer::WebServer(int port):_listenFd(-1),_port(port),_epoller(new Epoller()) {
+const int TIMESHOT = 5;
+
+int WebServer::pipeFd[2];
+WebServer::WebServer(int port):_listenFd(-1),_port(port),_epoller(new Epoller()),timeout(false),_timerList(new Timer_List()) {
 
 }
 
 WebServer::~WebServer() {
     delete _epoller;
+    _timerMap.clear();
+    delete _timerList;
+    close(pipeFd[0]);
+    close(pipeFd[1]);
     //delete _threadpool;
 }
 
@@ -20,6 +28,7 @@ void WebServer::initSocket() {
     optlen = sizeof(option);
     setsockopt(_listenFd,SOL_SOCKET,SO_REUSEADDR,&option,optlen);
 
+    //初始化_listenFd
     bzero(&_addr,sizeof(_addr));
     _addr.sin_family = AF_INET;
     _addr.sin_port = htons(_port);
@@ -30,7 +39,19 @@ void WebServer::initSocket() {
     int listen_num = listen(_listenFd,512);
     assert(listen_num != -1);
 
+    //把_listenFd加入epoller
     _epoller->addFd(_listenFd,EPOLLIN);
+
+    //初始化管道
+    int ret = socketpair(AF_LOCAL,SOCK_STREAM,0,WebServer::pipeFd);//双向管道
+    assert(ret != -1);
+    setnonBlocking(pipeFd[1]);
+    setnonBlocking(pipeFd[0]);
+    _epoller->addFd(pipeFd[0],EPOLLIN | EPOLLET);//pipeFd[1]向pipeFd[0]传递信号，pipeFd[0]读出信号
+
+    //添加信号
+    addSig(SIGALRM);   
+    alarm(TIMESHOT);//TIMESHOT秒后，程序会得到一个SIGALRM
 }
 
 void WebServer::start() {
@@ -48,16 +69,23 @@ void WebServer::start() {
                 //连接事件
                 std::cout<<"listenFd event"<<std::endl;
                 handleConnection();
+
             }else {
-                if(event & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+                if((fd == pipeFd[0]) && (event & EPOLLIN)) {
+                    //信号事件
+                    std::cout<<"Sig event"<<std::endl;
+                    handleSig(timeout);
+                    //处理完，如果有超时事件，timeout为true
+
+                }else if(event & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                     //关闭相应连接
                     std::cout<<"event事件错误"<<std::endl;
                     exit(0);
+                    
                 }else if(event & EPOLLIN) {
                     //读事件
                     //pthread_t tid;
                     std::cout<<"EPOLLIN event"<<std::endl;
-                    //handleEvent((void*)&fd);
                     wrap_events((void*)&fd).detach();
                     //std::thread(&WebServer::handleConnection,(void*)&fd);
                     //pthread_create(&tid,NULL,&(WebServer::handleEvent),(void*)&fd);
@@ -66,6 +94,11 @@ void WebServer::start() {
                 }else if(event & EPOLLOUT) {
                     std::cout<<"EPOLLOUT event"<<std::endl;
                 }else {}
+
+                if(timeout) {
+                    handleTimer();
+                    timeout = false;
+                }
             }
 
             // if(!(pev->events & EPOLLIN)) {
@@ -98,12 +131,20 @@ void WebServer::handleConnection() {
     assert(cliSock > 0);
 
     //设置cliSock为非阻塞模式
-    int flag = fcntl(cliSock,F_GETFL);
-    flag |= O_NONBLOCK;
-    fcntl(cliSock,F_SETFL,flag);
+    setnonBlocking(cliSock);
 
     //把cliSock添加到epoller上
     _epoller->addFd(cliSock,EPOLLIN | EPOLLET | EPOLLONESHOT);
+
+    //创建定时器，绑定超时时间，添加到链表中
+    Timer *timer = new Timer;
+    time_t cur = time(NULL);
+    timer->fd = cliSock;
+    timer->expire = cur + 3 * TIMESHOT;
+    timer->cb_func = std::bind(&WebServer::disconnect,this,cliSock);
+    _timerMap[cliSock] = timer;
+    _timerList->add_timer(timer);
+    //_timerList->add_timer(cliSock,std::bind(&WebServer::disconnect,this,cliSock));
 }
 
 std::thread WebServer::wrap_events(void* arg) {
@@ -114,15 +155,24 @@ void WebServer::handleEvent(void* arg) {
     int cliSock = *(int*)arg;
     // 将浏览器发过来的数据, 读到buf中 
     char line[1024] = {0};
+
+    //定时器
+    Timer *timer = _timerMap[cliSock];
+
     // 读请求行
     int len = get_line(cliSock, line, sizeof(line));
     if(len == 0) {   
-        printf("客户端断开了连接...\n");
+        std::cout<<"客户端断开了连接...\n"<<std::endl;
         // 关闭套接字, cliSock从epoll上del
-        disconnect(cliSock);         
+        disconnect(cliSock);
+
+        //从链表中删除timer
+        if(timer) _timerList->del_timer(timer);
+
     } else { 
-    	printf("============= 请求头 ============\n");   
-        printf("请求行数据: %s", line);
+
+    	std::cout<<"============= 请求头 ============\n"<<std::endl;   
+        std::cout<<"请求行数据: %s, "<<line<<std::endl;
         // 还有数据没读完,继续读走
 		while (1) {
 			char buf[1024] = {0};
@@ -132,7 +182,13 @@ void WebServer::handleEvent(void* arg) {
 			} else if (len == -1)
 				break;
 		}
-        printf("============= The End ============\n");
+        std::cout<<"============= The End ============\n"<<std::endl;
+
+        if(timer) {
+            time_t cur = time(NULL);
+            timer->expire = cur + 3 * TIMESHOT;
+            _timerList->adjust_timer(timer);
+        }
     }
     
     // 判断get请求
@@ -359,8 +415,7 @@ void WebServer::decode_str(char *to, char *from){
     *to = '\0';
 }
 
-int WebServer::hexit(char c)
-{
+int WebServer::hexit(char c){
     if (c >= '0' && c <= '9')
         return c - '0';
     if (c >= 'a' && c <= 'f')
@@ -369,4 +424,58 @@ int WebServer::hexit(char c)
         return c - 'A' + 10;
 
     return 0;
+}
+
+void WebServer::setnonBlocking(int fd) {
+
+    int flag = fcntl(fd,F_GETFL);
+    flag |= O_NONBLOCK;
+    fcntl(fd,F_SETFL,flag);
+    
+}
+
+void WebServer::handleSig(bool &timeout) {
+    //得到是否有超时事件，返回在timeout里
+    char signals[1024];
+    int ret = recv(pipeFd[0],signals,sizeof(signals),0);
+    if(ret == -1) {
+        std::cout<<"sig error"<<std::endl;
+    }else if(ret == 0) return;
+    else {
+        for(int i = 0; i < ret; ++i) {
+            if(signals[i] == SIGALRM) {
+                timeout = true;
+                break;
+            }
+        }
+    }
+}
+
+// void WebServer::sendSig(int sig) {
+//     int save_errno = errno;
+//     int msg = sig;
+//     send(pipeFd[1],(char*)msg,1,0);
+//     errno = save_errno;
+// }
+
+void sendSig(int sig) {
+
+    int save_errno = errno;
+    int msg = sig;
+    send(WebServer::pipeFd[1],(char*)&msg,1,0);
+    errno = save_errno;
+
+}
+
+void WebServer::addSig(int sig) {
+    struct sigaction sa;
+    sa.sa_handler = sendSig;
+    sa.sa_flags |= SA_RESTART;
+    sigfillset(&sa.sa_mask);
+    assert( sigaction(sig,&sa,NULL) != -1 );
+}
+
+void WebServer::handleTimer() {
+    _timerList->tick();
+    alarm(TIMESHOT);
 }
