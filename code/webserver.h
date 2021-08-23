@@ -28,25 +28,26 @@ public:
     void start();
 
     //socket相关
-    void initSocket();
-    void handleConnection();
-    void handleEvent(void* arg);
-    std::thread wrap_events(void* arg);
+    void initSocket();//初始化监听socket
+    void handleConnection();//处理_listenFd连接事件
+    void handleEvent(void* arg);//处理HTTP事件
+    std::thread wrap_events(void* arg);//对handleEvent包装，然后可以使用C++11的多线程
     void disconnect(int cliSock);
 
     //HTTP相关
     void http_request(const char* request,int cliSock);
-    void send_respond_head(int cliSock, int no, const char* desp, const char* type, long len);
-    void send_file(int cliSock, const char* fileName);
+    void send_respond_head(int cliSock, int no, const char* desp, const char* type, long len);//发消息头
+    void send_file(int cliSock, const char* fileName);//发内容
     void send_error(int cliSock, int status, char *title, char *text);
+    
     //译码
     int hexit(char c);
     void encode_str(char* to, int tosize, const char* from);
     void decode_str(char *to, char *from);
 
     //文件相关
-    int get_line(int cliSock,char* line,int size);
-    const char *get_file_type(const char *name);
+    int get_line(int cliSock,char* line,int size);//获取一行内容
+    const char *get_file_type(const char *name);//得到参数的类型
 
     
 private:
