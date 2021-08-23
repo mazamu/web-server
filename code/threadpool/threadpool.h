@@ -17,8 +17,8 @@ typedef enum {
 } ShutdownMode;
 
 struct ThreadTask {
-    std::function<void(void*)> process;     // 实际传入的是Server::do_request;
-    void* arg;   // 实际应该是HttpData对象
+    std::function<void(void*)> process;     // 相应函数;
+    void* arg;   // 相应参数
 };
 
 
