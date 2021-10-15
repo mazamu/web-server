@@ -1,5 +1,6 @@
-server :
-	g++ -g -std=c++11 main.cpp webserver.cpp epoller.cpp ./timer/timer.cpp -o server -lpthread
-
+# server :
+	# g++ -g -std=c++11 main.cpp webserver.cpp epoller.cpp ./timer/timer.cpp -o server -lpthread
+svtrr :
+	g++ -g -std=c++11 main.cpp webserver.cpp epoller.cpp ./logs/log.cpp -o svtrr -lpthread
 clean :
-	rm server
+	rm svtrr

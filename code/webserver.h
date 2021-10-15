@@ -20,7 +20,8 @@
 #include <thread>
 #include <unordered_map>
 #include"epoller.h"
-#include"timer/timer.h"
+#include"logs/log.h"
+//#include"timer/timer.h"
 //#include"threadpool.h"
 class WebServer{
 public:
@@ -43,10 +44,10 @@ public:
     void send_file(int cliSock, const char* fileName);//发内容
     void send_error(int cliSock, int status, char *title, char *text);
     
-    //译码
-    int hexit(char c);
-    void encode_str(char* to, int tosize, const char* from);
-    void decode_str(char *to, char *from);
+    // //译码
+    // int hexit(char c);
+    // void encode_str(char* to, int tosize, const char* from);
+    // void decode_str(char *to, char *from);
 
     //文件相关
     int get_line(int cliSock,char* line,int size);//获取一行内容
@@ -54,13 +55,12 @@ public:
     void setnonBlocking(int fd);//设置非阻塞I/O
     
     //信号相关
-    void handleSig(bool &timeout);//处理信号主函数
-    //void sendSig(int sig);//发信号
-    void addSig(int sig);//添加信号
-    void handleTimer();//定时处理任务，内部调用tick()
-    //void disconnect(int cliSock);//处理非活动连接
+    // void handleSig(bool &timeout);//处理信号主函数
+    // //void sendSig(int sig);//发信号
+    // void addSig(int sig);//添加信号
+    // void handleTimer();//定时处理任务，内部调用tick()
     
-    static int pipeFd[2];
+    // static int pipeFd[2];
 
 
 private:
@@ -72,9 +72,9 @@ private:
     //ThreadPool*_threadpool;//线程池负责各个连接的工作
     //std::unordered_map<int,HTTPconnection>_users;//socket对HTTP连接的映射
 
-    std::unordered_map<int,Timer*>_timerMap;//cliSock对定时器的映射
-    Timer_List *_timerList;//定时器升序链表
-    bool timeout;//标志是否有超时
+    // std::unordered_map<int,Timer*>_timerMap;//cliSock对定时器的映射
+    // Timer_List *_timerList;//定时器升序链表
+    //bool timeout;//标志是否有超时
 
 };
 
