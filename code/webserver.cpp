@@ -245,7 +245,7 @@ int WebServer::get_line(int sock, char *buf, int size) {
 void WebServer::http_request(const char* request,int cliScok) {
     char method[12], path[1024], protocol[12];
     sscanf(request, "%[^ ] %[^ ] %[^ ]", method, path, protocol);
-    printf("method = %s, path = %s, protocol = %s\n", method, path, protocol);   
+    //printf("method = %s, path = %s, protocol = %s\n", method, path, protocol);   
 
     // 转码 将不能识别的中文乱码 -> 中文
     // 解码 %23 %34 %5f
@@ -376,7 +376,7 @@ void WebServer::send_error(int cliSock, int status, char *title, char *text){
 	sprintf(buf, "%s %d %s\r\n", "HTTP/1.1", status, title);
 	sprintf(buf+strlen(buf), "Content-Type:%s\r\n", "text/html");
 	sprintf(buf+strlen(buf), "Content-Length:%d\r\n", -1);
-	sprintf(buf+strlen(buf), "Connection: close\r\n");
+	sprintf(buf+strlen(buf), "Connection: keep-alive\r\n");
 	send(cliSock, buf, strlen(buf), 0);
 	send(cliSock, "\r\n", 2, 0);
 
