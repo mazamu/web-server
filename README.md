@@ -59,6 +59,9 @@
 
 + 加入数据库部分，实现用户登录、注册
 
+# 压力测试
+- https://github.com/mazamu/web-server/tree/master/pressureTest
+
 ### 参考资料
 
 《TCP/IP网络编程》、《Linux高性能服务器》
