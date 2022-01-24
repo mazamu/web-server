@@ -23,6 +23,7 @@
 #include"logs/log.h"
 //#include"timer/timer.h"
 //#include"threadpool.h"
+#include"ThreadPool.h"
 class WebServer{
 public:
     WebServer(int port = 10000);
@@ -69,6 +70,7 @@ private:
     int _port;
 
     Epoller*_epoller;
+    ThreadPool *_pool;
     //ThreadPool*_threadpool;//线程池负责各个连接的工作
     //std::unordered_map<int,HTTPconnection>_users;//socket对HTTP连接的映射
 

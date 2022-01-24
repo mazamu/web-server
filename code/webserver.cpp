@@ -7,7 +7,9 @@ const int TIMESHOT = 5;
 // WebServer::WebServer(int port):_listenFd(-1),_port(port),_epoller(new Epoller()),timeout(false),_timerList(new Timer_List()) {
 
 // }
-WebServer::WebServer(int port):_listenFd(-1),_port(port),_epoller(new Epoller()) {
+WebServer::WebServer(int port):
+	_listenFd(-1),_port(port),
+	_epoller(new Epoller()), _pool(new ThreadPool(4)) {
 
 }
 WebServer::~WebServer() {
@@ -94,8 +96,9 @@ void WebServer::start() {
                     log( LOG_INFO, __FILE__, __LINE__, "%s", "EPOLLIN event\n");
                     // auto t = wrap_events((void*)&fd);
                     // t.join();
-                    wrap_events((void*)&fd).join();
-                    log( LOG_INFO, __FILE__, __LINE__, "%s", "thread joined succeed\n");
+		    //wrap_events((void*)&fd).join();
+                    _pool->enqueue(&WebServer::handleEvent, this, (void*)&fd);
+		    log( LOG_INFO, __FILE__, __LINE__, "%s", "thread joined succeed\n");
                     //std::thread(&WebServer::handleConnection,(void*)&fd);
                     //pthread_create(&tid,NULL,&(WebServer::handleEvent),(void*)&fd);
                     //std::thread(&WebServer::handleEvent,this,&fd);
