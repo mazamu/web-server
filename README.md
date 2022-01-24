@@ -32,9 +32,7 @@
 ├── main.cpp
 ├── Makefile
 ├── svtrr
-├── threadpool
-│   ├── threadpool.cpp
-│   └── threadpool.h
+├── Threadpool.h
 ├── timer
 │   ├── timer.cpp
 │   └── timer.h
@@ -54,8 +52,6 @@
 ### 待改进的地方
 
 + 支持post方法
-
-+ 使用线程池减少创建线程时的损耗
 
 + 加入数据库部分，实现用户登录、注册
 
