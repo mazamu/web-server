@@ -10,6 +10,10 @@
 // private:
 //     std::list<Timer>sorted_list;
 
+Timer::Timer(int socket, TimeoutCallBack func, time_t time):fd(socket), cb_func(func), expire(time)
+{
+	
+}
 void Timer_List::add_timer(Timer* t) {
     if(!t) return;
 

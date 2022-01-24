@@ -11,6 +11,7 @@ public:
     int fd;
     time_t expire;//任务的超时时间，使用绝对时间
     TimeoutCallBack cb_func;
+    Timer(int socket, TimeoutCallBack, time_t time);
     //void (*cb_func)(int sockfd);
     //std::function<void()> TimeoutCallBack;
     bool operator<(const Timer & t) const {

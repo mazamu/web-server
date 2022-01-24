@@ -21,7 +21,7 @@
 #include <unordered_map>
 #include"epoller.h"
 #include"logs/log.h"
-//#include"timer/timer.h"
+#include"timer/timer.h"
 //#include"threadpool.h"
 #include"ThreadPool.h"
 class WebServer{
@@ -54,14 +54,14 @@ public:
     int get_line(int cliSock,char* line,int size);//获取一行内容
     const char *get_file_type(const char *name);//得到参数的类型
     void setnonBlocking(int fd);//设置非阻塞I/O
-    
+	bool setTimer(int socket);    
     //信号相关
-    // void handleSig(bool &timeout);//处理信号主函数
-    // //void sendSig(int sig);//发信号
-    // void addSig(int sig);//添加信号
-    // void handleTimer();//定时处理任务，内部调用tick()
+    void handleSig(bool &timeout);//处理信号主函数
+    //void sendSig(int sig);//发信号
+    void addSig(int sig);//添加信号
+    void handleTimer();//定时处理任务，内部调用tick()
     
-    // static int pipeFd[2];
+    static int pipeFd[2];
 
 
 private:
@@ -74,9 +74,9 @@ private:
     //ThreadPool*_threadpool;//线程池负责各个连接的工作
     //std::unordered_map<int,HTTPconnection>_users;//socket对HTTP连接的映射
 
-    // std::unordered_map<int,Timer*>_timerMap;//cliSock对定时器的映射
-    // Timer_List *_timerList;//定时器升序链表
-    //bool timeout;//标志是否有超时
+     std::unordered_map<int,Timer*>_timerMap;//cliSock对定时器的映射
+    Timer_List *_timerList;//定时器升序链表
+    bool timeout;//标志是否有超时
 
 };
 
